@@ -4,38 +4,52 @@
 //
 //  Created by Adam Elfsborg on 2024-08-05.
 //
-
+import CoreImage
+import CoreImage.CIFilterBuiltins
 import SwiftUI
 
 struct ContentView: View {
-    @State private var showingConformation = false
-    @State private var backgroundColor = Color.white
-    @State private var blurAmount = 0.0
+    @State private var image: Image?
     var body: some View {
         VStack {
-            Button("Show") {
-                showingConformation.toggle()
-            }
-            Slider(value: $blurAmount, in: 0...20)
-                .onChange(of: blurAmount) { oldValue, newValue in
-                    print("BlurAmount changed from \(oldValue) to \(newValue)")
-                }
+        image?
+            .resizable()
+            .scaledToFit()
         }
-        .padding()
-        VStack {}
-        .frame(width: 300, height: 300)
-        .background(backgroundColor)
-        .blur(radius: blurAmount)
-        .confirmationDialog("Change background", isPresented: $showingConformation) {
-            Button("Red") { backgroundColor = .red }
-            Button("Blue") { backgroundColor = .blue }
-            Button("Yellow") { backgroundColor = .yellow }
-            Button("Green") { backgroundColor = .green }
-            Button("Cancel", role: .cancel ) { }
-        } message: {
-            Text("Select a new background color.")
-        }
+        .onAppear(perform: loadImage)
     }
+    
+    func loadImage() {
+        let inputImage = UIImage(resource: .tuscany)
+        let beginImage = CIImage(image: inputImage)
+        
+        let context = CIContext()
+        let currentFilter = CIFilter.crystallize()
+        currentFilter.inputImage = beginImage
+        
+        let amount = 1.0
+        let inputKeys = currentFilter.inputKeys
+        
+        if inputKeys.contains(kCIInputIntensityKey) {
+            currentFilter.setValue(amount, forKey: kCIInputIntensityKey)
+        }
+        
+        if inputKeys.contains(kCIInputRadiusKey) {
+            currentFilter.setValue(amount * 200, forKey: kCIInputRadiusKey)
+        }
+        
+        if inputKeys.contains(kCIInputScaleKey) {
+            currentFilter.setValue(amount * 10, forKey: kCIInputScaleKey)
+        }
+        guard let outputImage = currentFilter.outputImage else { return }
+        guard let cgImage = context.createCGImage(outputImage, from: outputImage.extent) else { return }
+        
+        let uiImage = UIImage(cgImage: cgImage)
+        image = Image(uiImage: uiImage)
+        
+        
+    }
+    
 }
 
 #Preview {
