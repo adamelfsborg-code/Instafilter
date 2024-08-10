@@ -15,8 +15,13 @@ struct ContentView: View {
     
     @State private var processedImage: Image?
     @State private var selectedImage: PhotosPickerItem?
-    @State private var filterIntensity = 0.5
+    
     @State private var showingFilters = false
+    
+    @State private var filterIntensity = 0.5
+    @State private var filterRadius = 100.0
+    @State private var filterScale = 5.0
+    
     
     @AppStorage("Filtercount") var filterCount = 0
     
@@ -41,14 +46,29 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                HStack {
-                    Text("Intensity")
-                    Slider(value: $filterIntensity)
-                        .onChange(of: filterIntensity, applyProcessing)
+                VStack {
+                    HStack {
+                        Text("Intensity")
+                        Slider(value: $filterIntensity)
+                            .onChange(of: filterIntensity, applyProcessing)
+                    }
+                    HStack {
+                        Text("Radius")
+                        Slider(value: $filterRadius, in: 0...200)
+                            .onChange(of: filterRadius, applyProcessing)
+                            
+                    }
+                    HStack {
+                        Text("Scale")
+                        Slider(value: $filterScale, in: 0...20)
+                            .onChange(of: filterScale, applyProcessing)
+                    }
                 }
+                .disabled(selectedImage == nil)
                 
                 HStack {
                     Button("Change filter", action: changeFilter)
+                        .disabled(selectedImage == nil)
                     
                     Spacer()
                     
@@ -67,6 +87,9 @@ struct ContentView: View {
                 Button("Sepia Tone") {setFilter(CIFilter.sepiaTone()) }
                 Button("Unsharp Mask") {setFilter(CIFilter.unsharpMask()) }
                 Button("Vignette") {setFilter(CIFilter.vignette()) }
+                Button("Posterize") {setFilter(CIFilter.colorPosterize()) }
+                Button("Disc Blur") {setFilter(CIFilter.discBlur()) }
+                Button("Fade Effect") {setFilter(CIFilter.photoEffectFade()) }
                 Button("Cancel", role: .cancel) {}
             }
         }
@@ -95,13 +118,13 @@ struct ContentView: View {
         }
         
         if inputKeys.contains(kCIInputRadiusKey) {
-            currentFilter.setValue(filterIntensity * 200, forKey: kCIInputRadiusKey)
+            currentFilter.setValue(filterRadius, forKey: kCIInputRadiusKey)
         }
         
         if inputKeys.contains(kCIInputScaleKey) {
-            currentFilter.setValue(filterIntensity * 10, forKey: kCIInputScaleKey)
+            currentFilter.setValue(filterScale, forKey: kCIInputScaleKey)
         }
-        
+    
         
         guard let outputImage = currentFilter.outputImage else { return }
         guard let cgImage = context.createCGImage(outputImage, from: outputImage.extent) else { return }
